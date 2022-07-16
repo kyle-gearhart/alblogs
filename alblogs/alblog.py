@@ -2,25 +2,23 @@ from datetime import datetime
 from functools import reduce
 from urllib.parse import urlparse
 
+
+
 class AlbAccessLogEntry:
     COLUMNS = [
 		("type", str, ),
-		("timestamp", [int, datetime.fromtimestamp], ),
+		("timestamp", str, ),
 		("alb", str, ),
-		("client_ip", str, ),
-		("client_port", str, ),
-		("backend_ip", str, ),
-		("backend_port", str, ),
+		("client_ip", [str, lambda ip: ip.split(':')], ),
+		("backend_ip", [str, lambda ip: ip.split(':')], ),
 		("request_processing_time", float, ),
 		("backend_processing_time", float, ),
 		("response_processing_time", float, ),
 		("alb_status_code", int, ),
 		("backend_status_code", int, ),
-		("received_bytes", float, ),
-		("sent_bytes", float, ),
-		("request_verb", str, ),
-		("request_url", urlparse, ),
-		("request_proto", str, ),
+		("received_bytes", int, ),
+		("sent_bytes", int, ),
+		("request", [str, lambda request: request.split(' ')], ),
 		("user_agent", str, ),
 		("ssl_cipher", str, ),
 		("ssl_protocol", str, ),
@@ -29,9 +27,9 @@ class AlbAccessLogEntry:
 		("domain_name", str, ),
 		("chosen_cert_arn", str, ),
 		("matched_rule_priority", int, ),
-		("request_creation_time", [int, datetime.fromtimestamp], ),
-		("actions_executed", int, ),
-		("redirect_url", int, ),
+		("request_creation_time", str, ),
+		("actions_executed", str, ),
+		("redirect_url", str, ),
     ]
 
     @classmethod
@@ -40,8 +38,8 @@ class AlbAccessLogEntry:
 
     @classmethod
     def hydrate(cls, row_data: list):
-        return [column_ty(column_data) if callable(column_ty) else reduce(lambda carry, item: item(carry), column_ty, column_data) for column_name, column_ty, column_data in zip(self.COLUMNS, row_data)]
+        return [column_ty(column_data) if callable(column_ty) else reduce(lambda carry, item: item(carry), column_ty, column_data) for (column_name, column_ty), column_data in zip(cls.COLUMNS, row_data)]
 
     @classmethod
     def hydrate_dict(cls, row_data: list):
-        return { column_name: column_ty(column_data) if callable(column_ty) else reduce(lambda carry, item: item(carry), column_ty, column_data) for column_name, column_ty, column_data in zip(self.COLUMNS, row_data)}
+        return { column_name: column_ty(column_data) if callable(column_ty) else reduce(lambda carry, item: item(carry), column_ty, column_data) for (column_name, column_ty), column_data in zip(cls.COLUMNS, row_data)}
